@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rogue Cells — Self-Check</title>
+<style>
+  :root{
+    --red:#a3232f; --dark:#1c1a17; --gray:#5c5650; --line:#ddd7cd;
+    --paper:#faf7f0; --card:#ffffff; --green:#1f7a3d; --greenBg:#e9f7ee;
+    --amber:#8a5a00; --amberBg:#fff3e0; --stamp:#a3232f;
+  }
+  :root:not([data-theme="light"]){ }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --dark:#f1ede6; --gray:#b9b2a6; --paper:#1b1815; --card:#242019;
+      --line:#3a342c; --greenBg:#173321; --amberBg:#3a2a10;
+    }
+  }
+  :root[data-theme="dark"]{
+    --dark:#f1ede6; --gray:#b9b2a6; --paper:#1b1815; --card:#242019;
+    --line:#3a342c; --greenBg:#173321; --amberBg:#3a2a10;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;}
+  body{
+    margin:0; background:var(--paper); color:var(--dark);
+    font-family:Georgia,'Times New Roman',serif;
+    padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  #wrap{max-width:760px; margin:0 auto; padding:0 18px 60px;}
+  header{
+    position:sticky; top:0; padding-top:calc(14px + env(safe-area-inset-top,0px));
+    padding-bottom:12px; background:var(--paper); border-bottom:2px solid var(--red); z-index:5;
+  }
+  .stamp{
+    display:inline-block; font-family:'Courier New',monospace; font-size:11px; letter-spacing:2px;
+    color:#fff; background:var(--stamp); padding:2px 8px; border-radius:2px; transform:rotate(-2deg);
+    margin-bottom:6px;
+  }
+  h1{font-family:Arial,Helvetica,sans-serif; font-size:24px; margin:0 0 2px; letter-spacing:.5px;}
+  .sub{font-family:Arial,sans-serif; font-size:13px; color:var(--gray);}
+  .progress-bar{height:5px; background:var(--line); border-radius:3px; margin-top:10px; overflow:hidden;}
+  .progress-fill{height:100%; background:var(--red); width:0%; transition:width .25s;}
+  main{padding-top:18px;}
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:8px;
+    padding:20px; margin-bottom:18px; box-shadow:0 1px 3px rgba(0,0,0,.05);
+  }
+  .tag{
+    font-family:Arial,sans-serif; font-size:11px; font-weight:bold; letter-spacing:.5px;
+    text-transform:uppercase; color:var(--red); margin-bottom:6px; display:block;
+  }
+  .prompt{font-size:18px; line-height:1.45; margin:0 0 6px;}
+  .frame{font-family:Arial,sans-serif; font-style:italic; font-size:13px; color:var(--gray); margin-bottom:14px;}
+  label{font-family:Arial,sans-serif; font-size:12px; font-weight:bold; display:block; margin-bottom:5px; color:var(--gray);}
+  textarea{
+    width:100%; min-height:90px; font-family:Georgia,serif; font-size:16px; padding:10px;
+    border:1px solid var(--line); border-radius:5px; background:var(--paper); color:var(--dark); resize:vertical;
+  }
+  .btnrow{display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;}
+  button{
+    font-family:Arial,sans-serif; font-weight:bold; font-size:14px; border:none;
+    border-radius:6px; padding:11px 18px; cursor:pointer; background:var(--red); color:#fff;
+  }
+  button.ghost{background:transparent; color:var(--dark); border:1px solid var(--line);}
+  button.small{padding:8px 14px; font-size:13px;}
+  button:disabled{opacity:.4; cursor:default;}
+  .reveal{
+    margin-top:16px; border-top:1px dashed var(--line); padding-top:14px; display:none;
+  }
+  .reveal.show{display:block;}
+  .answer-label{font-family:Arial,sans-serif; font-size:11px; font-weight:bold; text-transform:uppercase; letter-spacing:.5px; color:var(--green); margin-bottom:6px; display:block;}
+  .answer-box{background:var(--greenBg); border:1px solid #b8e2c4; border-radius:6px; padding:12px 14px; font-size:16px; line-height:1.5;}
+  .answer-box ul{margin:4px 0 0 18px; padding:0;}
+  .selfcheck{font-family:Arial,sans-serif; font-size:14px; margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;}
+  .selfcheck button.ok{background:var(--green);}
+  .selfcheck button.fix{background:var(--amber);}
+  .nudge{
+    display:none; margin-top:12px; font-family:Arial,sans-serif; font-size:14px;
+    background:var(--amberBg); border:1px solid #f0d29b; color:var(--amber); border-radius:6px; padding:10px 12px;
+  }
+  .nudge.show{display:block;}
+  .confirm{display:none; margin-top:12px; align-items:center; gap:8px; font-family:Arial,sans-serif; font-size:13px;}
+  .confirm.show{display:flex;}
+  .navrow{display:flex; justify-content:space-between; margin-top:16px;}
+  #summary .item{
+    font-family:Arial,sans-serif; font-size:14px; padding:9px 0; border-bottom:1px solid var(--line);
+    display:flex; justify-content:space-between; gap:10px;
+  }
+  .pill{font-weight:bold; white-space:nowrap;}
+  .pill.ok{color:var(--green);}
+  .pill.fix{color:var(--amber);}
+  .pill.skip{color:var(--gray);}
+  footer{font-family:Arial,sans-serif; font-size:12px; color:var(--gray); text-align:center; margin-top:20px;}
+  .hidden{display:none !important;}
+  .optional-badge{font-family:Arial,sans-serif; font-size:10px; font-weight:bold; color:var(--gray); border:1px solid var(--line); border-radius:10px; padding:2px 8px; margin-left:6px; text-transform:uppercase;}
+  .cp-q{font-family:Arial,sans-serif; margin-bottom:18px; padding-bottom:16px; border-bottom:1px solid var(--line);}
+  .cp-q:last-child{border-bottom:none;}
+  .cp-prompt{font-size:15px; font-weight:bold; margin-bottom:10px;}
+  .cp-opt{
+    display:block; width:100%; text-align:left; background:var(--paper); color:var(--dark);
+    border:1px solid var(--line); border-radius:6px; padding:10px 12px; margin-bottom:8px;
+    font-family:Georgia,serif; font-size:15px; cursor:pointer; font-weight:normal;
+  }
+  .cp-opt.correct{background:var(--greenBg); border-color:#b8e2c4; color:var(--green); font-weight:bold;}
+  .cp-opt.incorrect{background:var(--amberBg); border-color:#f0d29b; color:var(--amber);}
+  .cp-explain{font-size:13px; margin-top:8px; padding:8px 10px; border-radius:5px; display:none;}
+  .cp-explain.show{display:block; background:var(--greenBg); color:var(--green);}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <header>
+    <div class="stamp">TOP SECRET · AGENT DEBRIEF</div>
+    <h1>ROGUE CELLS — Self-Check</h1>
+    <div class="sub" id="subline">Section 8.3 · Cancer &amp; the Cell Cycle</div>
+    <div class="progress-bar"><div class="progress-fill" id="progFill"></div></div>
+  </header>
+
+  <main>
+    <div id="screen-start" class="card">
+      <p style="font-family:Arial,sans-serif; font-size:14px; line-height:1.6;">
+        Grab your <b>completed Rogue Cells paper</b>. For each question, hit <b>Reveal the answer</b> to see
+        what it should say, then compare it to what's on your paper — if yours doesn't match, go fix it right
+        then, before you move on. Along the way you'll also hit a few <b>quick Checkpoint</b> questions to make
+        sure the ideas are actually sticking, not just the wording on your paper.
+      </p>
+      <div class="btnrow"><button onclick="begin()">Start</button></div>
+    </div>
+
+    <div id="screen-q" class="card hidden">
+      <div id="reviewPane">
+        <span class="tag" id="qTag"></span>
+        <p class="prompt" id="qPrompt"></p>
+        <p class="frame hidden" id="qFrame"></p>
+
+        <div class="btnrow">
+          <button onclick="reveal()">Reveal the answer</button>
+        </div>
+
+        <div class="reveal" id="revealBlock">
+          <span class="answer-label">✓ Correct answer</span>
+          <div class="answer-box" id="answerBox"></div>
+
+          <div class="selfcheck">
+            <span style="align-self:center;">Does your paper match this?</span>
+            <button class="ok small" onclick="markOk()">Yes, it matches</button>
+            <button class="fix small" onclick="markFix()">No, I need to fix it</button>
+          </div>
+
+          <div class="nudge" id="nudgeBox">
+            Go back to <b>this question on your paper</b> and update your answer using what's shown above.
+          </div>
+          <div class="confirm" id="confirmBox">
+            <label style="display:inline; margin:0;"><input type="checkbox" id="confirmCheck"> I fixed it on my paper</label>
+          </div>
+        </div>
+      </div>
+
+      <div id="cpPane" class="hidden">
+        <span class="tag" id="cpTag"></span>
+        <p class="prompt" style="font-size:16px;">Quick understanding check before you continue — no paper needed, just answer from what you've learned.</p>
+        <div id="cpQuestions"></div>
+      </div>
+
+      <div class="navrow">
+        <button class="ghost small" onclick="prevQuestion()">← Back</button>
+        <button class="small" id="nextBtn" onclick="nextQuestion()" disabled>Next question →</button>
+      </div>
+    </div>
+
+    <div id="screen-end" class="card hidden">
+      <h2 style="font-family:Arial,sans-serif; font-size:18px; margin-top:0;">Debrief complete</h2>
+      <p style="font-family:Arial,sans-serif; font-size:14px;">Here's how it went. Anything marked <span class="pill fix">Fixed</span> — double-check that change is actually on your paper before you turn it in.</p>
+      <div id="summary"></div>
+      <p style="font-family:Arial,sans-serif; font-size:13px; color:var(--gray); margin-top:14px;">This page doesn't submit anything to your teacher — it's just for you to check your own work. Turn in your paper as usual.</p>
+      <div class="btnrow"><button class="ghost" onclick="restart()">Start over</button></div>
+    </div>
+  </main>
+
+  <footer>Rogue Cells Self-Check · Hartland High School Biology</footer>
+</div>
+
+<script>
+var Q = [
+  { id:'W', tag:'Warm-Up', prompt:'Predict: If your sample came from cancerous tissue, how would the phase percentages change? Why?',
+    frame:'Frame: In cancer tissue, the % in mitosis would ______ because cancer cells ______.',
+    answer:'The % in mitosis would go UP (interphase would go down) because cancer cells divide over and over without stopping — the enzymes that control the cycle are broken.' },
+  { id:'Q1', tag:'Intel File 1 · Q1', prompt:'In what ways do enzymes control the cell cycle?',
+    frame:'Frame: Some enzymes ______ the cell cycle, while other enzymes ______.',
+    answer:"Some enzymes start and drive the cell cycle forward (gas pedal). Other enzymes monitor the cell's progress and regulate whether it can move from one phase to the next (brakes / checkpoints)." },
+  { id:'Q2', tag:'Intel File 1 · Q2', prompt:'What is a gene? How does it relate to enzymes?',
+    frame:'Frame: A gene is a segment of ______ that codes for ______. If the gene is damaged, the enzyme might be ______.',
+    answer:'A gene is a segment of DNA that codes for a protein, like an enzyme. Those enzymes regulate the cell cycle. If the gene is damaged, the enzyme might be overproduced, not produced at all, or made at the wrong time.' },
+  { id:'Q3', tag:'Intel File 1 · Q3', prompt:'What is cancer and how does it start? (Include the role of enzymes.)',
+    frame:'Frame: Cancer is ______. It starts when the enzymes that regulate the cell cycle are ______.',
+    answer:'Cancer is uncontrolled cell division (uncontrolled mitosis). It starts when the enzymes that regulate the cell cycle are not produced, overproduced, or produced at the wrong time — usually because the gene for that enzyme has a mutation.' },
+  { id:'CP1', type:'checkpoint', tag:'✅ Checkpoint · Intel File 1', questions:[
+      { prompt:'What happens if the gene for a cell-cycle enzyme gets mutated?', options:['The enzyme works perfectly, nothing changes','The enzyme may be over-produced, under-produced, or made at the wrong time','The gene disappears completely','The cell immediately dies'], correct:1, explain:'A mutated gene usually means the enzyme it codes for doesn\'t get made correctly — too much, too little, or at the wrong time — which is what throws off the cell cycle.' },
+      { prompt:'Which best describes cancer?', options:['A virus that infects cells','Uncontrolled cell division caused by faulty cell-cycle enzymes','A type of bacteria','Cells refusing to ever divide'], correct:1, explain:'Cancer is uncontrolled mitosis — cells dividing over and over because the enzymes/checkpoints that should regulate the cycle aren\'t working right.' }
+    ] },
+  { id:'Q4', tag:'Intel File 2 · Q4', prompt:'Describe the stages of cancer, beginning with genes and ending with metastasis.',
+    frame:'✎ Sketch option: if you drew a 5-panel comic strip, check that your 5 panels match these 5 steps.',
+    answer:['1) Mutation — an error in DNA changes a gene for a cell-cycle enzyme.','2) Enzymes misfire — turned on at the wrong time, overproduced, or not made.','3) Nonstop mitosis — the cell keeps dividing and forms a tumor.','4) Tumor grows — steals nutrients and space; nearby normal cells die.','5) Metastasis — cancer cells travel in blood/lymph and form new tumors.'] },
+  { id:'Q5', tag:'Intel File 2 · Q5', prompt:'What is a tumor, and how is mitosis related to it?',
+    frame:'Frame: A tumor is ______. It forms because mitosis ______.',
+    answer:"A tumor is an abnormal mass of cells (uncontrolled tissue growth) — it can be benign or malignant. It forms because mitosis keeps happening over and over, even though the body doesn't need new cells." },
+  { id:'Q6', tag:'Intel File 2 · Q6', prompt:'What does metastasis mean?', frame:null,
+    answer:'Cancer cells break away from the original tumor, travel through the blood or lymph system, and form new tumors in other parts of the body — cancer spreading.' },
+  { id:'Q7', tag:'Intel File 2 · Q7 (chart)', prompt:"Complete the chart: what's the difference between benign and malignant?", frame:null,
+    answer:['BENIGN — Cancerous? No. Invades/spreads? No, stays in one place. Dangerous? Only if it presses on an organ (esp. the brain).','MALIGNANT — Cancerous? Yes. Invades/spreads? Yes, invades and can metastasize. Dangerous? Yes — destroys tissue and spreads through the body.'] },
+  { id:'CP2', type:'checkpoint', tag:'✅ Checkpoint · Intel File 2', questions:[
+      { prompt:'Which is true of a MALIGNANT tumor?', options:['It cannot spread and is always harmless','It can invade nearby tissue and metastasize','It is the same as a benign tumor','It stops mitosis in nearby cells'], correct:1, explain:'Malignant = cancerous. It invades surrounding tissue and can metastasize (spread) to other parts of the body — that\'s what makes it dangerous.' },
+      { prompt:'Metastasis means...', options:['The tumor shrinks on its own','Cancer cells travel through blood/lymph and form new tumors elsewhere','A cell repairs its own DNA','Mitosis stops completely'], correct:1, explain:'Metastasis is cancer cells breaking away, traveling through the blood or lymph system, and forming new tumors in other parts of the body.' }
+    ] },
+  { id:'Q8', tag:'Intel File 3 · Q8', prompt:'What proof exists that the environment can cause cancer?',
+    frame:'Frame: People in different countries ______. For example, ______.',
+    answer:'People in different countries develop different cancers at very different rates — e.g., breast cancer rates have been much higher in the U.S. than in Japan.' },
+  { id:'Q9', tag:'Intel File 3 · Q9', prompt:'What happens to cancer patterns when a person moves to another country? What does that tell us?', frame:null,
+    answer:"Cancer patterns start to match the country where the person now lives, not where they came from. Since their genes didn't change, this shows the environment (diet, air, water, habits) affects cancer risk." },
+  { id:'Q10', tag:'Intel File 3 · Q10', prompt:'What is a carcinogen?', frame:null,
+    answer:'A carcinogen is any substance or agent that can cause cancer. Many carcinogens are also mutagens — they damage DNA.' },
+  { id:'Q11', tag:'Intel File 3 · Q11', prompt:'List 5–6 environmental factors that can cause cancer.', frame:null,
+    answer:'Any 5–6: tobacco smoke/vaping · UV rays (sun, tanning beds) · other radiation (radon) · air &amp; water pollution · certain viruses (HPV, hepatitis B) · asbestos · alcohol · high-fat diets.' },
+  { id:'Q12', tag:'Intel File 3 · Q12 · Scavenger Hunt', prompt:'Name 2 carcinogens you could run into in everyday life and one way to avoid each.', frame:null,
+    answer:['Example: UV rays at the pool/beach → sunscreen, hat, shade, skip tanning beds.','Example: secondhand smoke/vape clouds → leave the area, don\'t start.','Example: radon gas in a basement → test your home for radon.','(Yours can be different — just needs a REAL carcinogen + a real way to avoid it.)'] },
+  { id:'Q13', tag:'Case Builder · Q13 (UV rays)', prompt:'How are UV rays connected to cancer? Use and underline all five: tumor · gene or DNA · mutation · enzyme · cell cycle.',
+    frame:'Frame: UV rays from the sun can damage the ______ in skin cells, causing a ______. Because that gene codes for an ______, the ______ doesn\'t stop and a ______ forms.',
+    answer:'UV rays from the sun damage the DNA in skin cells, causing a mutation in a gene. That gene codes for an enzyme that controls the cell cycle, so the enzyme stops working right. The cell cycle doesn\'t stop and a tumor forms. (Check: did you underline all 5 words on your paper?)' },
+  { id:'CP3', type:'checkpoint', tag:'✅ Checkpoint · Intel File 3 & Case Builder', questions:[
+      { prompt:'Which is evidence that environment can cause cancer?', options:['Everyone worldwide gets the exact same cancer rates','Cancer rates change when people move to a new country','Cancer is 100% determined by genes alone','Cancer rates never change over time'], correct:1, explain:'When people move to a new country, their cancer risk shifts to match their new environment — since their genes didn\'t change, that points to environment/lifestyle as a cause.' },
+      { prompt:'A carcinogen is...', options:['A cure for cancer','Any substance or agent that can cause cancer','A type of white blood cell','An antibiotic'], correct:1, explain:'A carcinogen is anything (a chemical, radiation, a virus, etc.) that can cause cancer — often by damaging DNA.' }
+    ] },
+  { id:'Q14', tag:'Intel File 4 · Q14 · Defense Plan', prompt:'How can cancer be prevented? Write your own 3-step Rogue Cell Defense Plan.', frame:null,
+    answer:'Pick any 3: low-fat, high-fiber diet with fruits/veggies/whole grains · get vitamins &amp; minerals from food · exercise daily · don\'t smoke, vape, or use tobacco · avoid pollution · wear sunscreen/skip tanning beds · do ABCDE skin checks.' },
+  { id:'Q15', tag:'Intel File 4 · Q15 (chart)', prompt:'Describe 3 treatments, how each attacks cancer, and one downside.', frame:'You need any 3 of these 5:',
+    answer:['Surgery — removes the tumor. Downside: may miss cells that already spread.','Chemotherapy — drugs kill cancer cells or stop them dividing. Downside: also harms healthy fast-dividing cells (hair loss, nausea).','Radiation therapy — focused radiation damages cancer cells\' DNA. Downside: can damage nearby healthy tissue.','Nuclear medicine — radioactive substances travel to cancer cells. Downside: radiation exposure to the body.','Immunotherapy — helps your immune system attack cancer. Downside: immune system can attack healthy tissue too.'] },
+  { id:'CP4', type:'checkpoint', tag:'✅ Checkpoint · Intel File 4', questions:[
+      { prompt:'Which is NOT a way to help prevent cancer?', options:['Wearing sunscreen','Regular exercise','Increased tobacco use','Eating a healthy diet'], correct:2, explain:'Tobacco use is a carcinogen risk factor, not a prevention step — smoking/vaping raises cancer risk, it doesn\'t lower it.' },
+      { prompt:'One downside of chemotherapy is that it...', options:['Only kills cancer cells','Can damage healthy fast-dividing cells, like hair follicles','Has no side effects at all','Is never given through an IV'], correct:1, explain:'Chemo drugs target rapidly-dividing cells — cancer cells divide fast, but so do hair follicle and gut-lining cells, which is why chemo has side effects like hair loss.' }
+    ] },
+  { id:'GFA', tag:'★ Going Further · A', optional:true, prompt:'Chemotherapy often causes hair loss. Using what you know about mitosis, explain why.', frame:null,
+    answer:'Chemo targets cells that divide rapidly. Hair follicle cells also divide rapidly, so they get damaged too.' },
+  { id:'GFB', tag:'★ Going Further · B', optional:true, prompt:'Cancer is much more common in older adults. Propose a scientific explanation.', frame:null,
+    answer:'Mutations build up over a lifetime (more years of carcinogen exposure and DNA copying errors), so older cells are more likely to have cell-cycle mutations.' }
+];
+
+var idx = -1;
+var answerStatus = {}; // id -> 'ok' | 'fix' | 'skip'
+var cpProgress = {}; // checkpoint id -> array of booleans (solved per sub-question)
+
+function begin(){
+  document.getElementById('screen-start').classList.add('hidden');
+  document.getElementById('screen-q').classList.remove('hidden');
+  idx = 0;
+  render();
+}
+
+function updateProgress(){
+  var pct = Math.round(((idx+1) / Q.length) * 100);
+  document.getElementById('progFill').style.width = pct + '%';
+  document.getElementById('subline').textContent = 'Question ' + (idx+1) + ' of ' + Q.length;
+}
+
+function render(){
+  var q = Q[idx];
+  updateProgress();
+
+  if (q.type === 'checkpoint'){
+    document.getElementById('reviewPane').classList.add('hidden');
+    document.getElementById('cpPane').classList.remove('hidden');
+    document.getElementById('cpTag').textContent = q.tag;
+    document.getElementById('nextBtn').disabled = true;
+    renderCheckpoint(q);
+    return;
+  }
+
+  document.getElementById('cpPane').classList.add('hidden');
+  document.getElementById('reviewPane').classList.remove('hidden');
+  document.getElementById('qTag').innerHTML = q.tag + (q.optional ? '<span class="optional-badge">optional</span>' : '');
+  document.getElementById('qPrompt').textContent = q.prompt;
+  var frameEl = document.getElementById('qFrame');
+  if (q.frame){ frameEl.textContent = q.frame; frameEl.classList.remove('hidden'); }
+  else { frameEl.classList.add('hidden'); }
+
+  var ansBox = document.getElementById('answerBox');
+  if (Array.isArray(q.answer)){
+    ansBox.innerHTML = '<ul>' + q.answer.map(function(a){ return '<li>' + a + '</li>'; }).join('') + '</ul>';
+  } else {
+    ansBox.textContent = q.answer;
+  }
+
+  // Restore prior progress on this question instead of wiping it out (fixes Back button losing your mark)
+  var prior = answerStatus[q.id];
+  if (prior === 'ok'){
+    document.getElementById('revealBlock').classList.add('show');
+    document.getElementById('nudgeBox').classList.remove('show');
+    document.getElementById('confirmBox').classList.remove('show');
+    document.getElementById('nextBtn').disabled = false;
+  } else if (prior === 'fix'){
+    document.getElementById('revealBlock').classList.add('show');
+    document.getElementById('nudgeBox').classList.add('show');
+    document.getElementById('confirmBox').classList.add('show');
+    document.getElementById('confirmCheck').checked = true;
+    document.getElementById('nextBtn').disabled = false;
+    document.getElementById('confirmCheck').onchange = function(){
+      document.getElementById('nextBtn').disabled = !this.checked;
+    };
+  } else {
+    document.getElementById('revealBlock').classList.remove('show');
+    document.getElementById('nudgeBox').classList.remove('show');
+    document.getElementById('confirmBox').classList.remove('show');
+    document.getElementById('confirmCheck').checked = false;
+    document.getElementById('nextBtn').disabled = true;
+  }
+}
+
+function renderCheckpoint(q){
+  var wrap = document.getElementById('cpQuestions');
+  wrap.innerHTML = '';
+  var solved = cpProgress[q.id] || new Array(q.questions.length).fill(false);
+
+  q.questions.forEach(function(cq, qi){
+    var div = document.createElement('div');
+    div.className = 'cp-q';
+    var optsHtml = cq.options.map(function(opt, oi){
+      var isCorrectOpt = solved[qi] && oi === cq.correct;
+      var cls = 'cp-opt' + (isCorrectOpt ? ' correct' : '');
+      var dis = solved[qi] ? ' disabled' : '';
+      return '<button type="button" class="'+cls+'" data-qi="'+qi+'" data-oi="'+oi+'"'+dis+' onclick="checkCP(this,'+qi+','+oi+')">'+opt+'</button>';
+    }).join('');
+    div.innerHTML = '<div class="cp-prompt">'+(qi+1)+'. '+cq.prompt+'</div>' + optsHtml +
+      '<div class="cp-explain'+(solved[qi] ? ' show' : '')+'" id="cpExplain'+qi+'">'+(solved[qi] ? '✓ ' + cq.explain : '')+'</div>';
+    wrap.appendChild(div);
+  });
+
+  window._cpSolved = solved;
+  cpProgress[q.id] = solved;
+  document.getElementById('nextBtn').disabled = !solved.every(function(v){ return v; });
+}
+
+function checkCP(btn, qi, oi){
+  var q = Q[idx];
+  var cq = q.questions[qi];
+  var container = btn.parentElement;
+  var opts = container.querySelectorAll('.cp-opt');
+  var correct = (oi === cq.correct);
+
+  opts.forEach(function(o, i){
+    o.disabled = correct; // lock choices once correct; allow retry if wrong
+    if (correct && i === cq.correct) o.classList.add('correct');
+  });
+  if (!correct){
+    btn.classList.add('incorrect');
+    setTimeout(function(){ btn.classList.remove('incorrect'); }, 900);
+  }
+
+  var explainEl = document.getElementById('cpExplain'+qi);
+  if (correct){
+    explainEl.textContent = '✓ ' + cq.explain;
+    explainEl.classList.add('show');
+    window._cpSolved[qi] = true;
+  }
+
+  var allSolved = window._cpSolved.every(function(v){ return v; });
+  document.getElementById('nextBtn').disabled = !allSolved;
+}
+
+function reveal(){
+  document.getElementById('revealBlock').classList.add('show');
+}
+
+function markOk(){
+  answerStatus[Q[idx].id] = 'ok';
+  document.getElementById('nudgeBox').classList.remove('show');
+  document.getElementById('confirmBox').classList.remove('show');
+  document.getElementById('nextBtn').disabled = false;
+}
+
+function markFix(){
+  answerStatus[Q[idx].id] = 'fix';
+  document.getElementById('nudgeBox').classList.add('show');
+  document.getElementById('confirmBox').classList.add('show');
+  document.getElementById('nextBtn').disabled = true;
+  document.getElementById('confirmCheck').onchange = function(){
+    document.getElementById('nextBtn').disabled = !this.checked;
+  };
+}
+
+function nextQuestion(){
+  if (idx < Q.length - 1){ idx++; render(); }
+  else { showSummary(); }
+}
+function prevQuestion(){
+  if (idx > 0){ idx--; render(); }
+}
+
+function showSummary(){
+  document.getElementById('screen-q').classList.add('hidden');
+  document.getElementById('screen-end').classList.remove('hidden');
+  var el = document.getElementById('summary');
+  el.innerHTML = '';
+  Q.forEach(function(q){
+    var div = document.createElement('div');
+    div.className = 'item';
+    if (q.type === 'checkpoint'){
+      div.innerHTML = '<span>' + q.tag + '</span><span class="pill ok">✓ Passed</span>';
+    } else {
+      var s = answerStatus[q.id];
+      var label = s === 'ok' ? '<span class="pill ok">✓ Matched</span>' :
+                  s === 'fix' ? '<span class="pill fix">✓ Fixed</span>' :
+                  '<span class="pill skip">— skipped</span>';
+      div.innerHTML = '<span>' + q.tag + '</span>' + label;
+    }
+    el.appendChild(div);
+  });
+}
+
+function restart(){
+  answerStatus = {};
+  cpProgress = {};
+  document.getElementById('screen-end').classList.add('hidden');
+  document.getElementById('screen-start').classList.remove('hidden');
+  document.getElementById('progFill').style.width = '0%';
+  document.getElementById('subline').textContent = 'Section 8.3 · Cancer & the Cell Cycle';
+}
+</script>
+</body>
+</html>
